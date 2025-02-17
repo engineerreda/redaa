@@ -43,6 +43,8 @@ jobs:
             # Run as root
             apt-get update && \
             apt-get install -y sudo python3.10 python3.10-venv curl wget unzip && \
+            # Check if python3 symlink exists, remove it if necessary
+            if [ -f /usr/bin/python3 ]; then rm /usr/bin/python3; fi && \
             ln -s /usr/bin/python3.10 /usr/bin/python3 && \
             # Install pip using the recommended method
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
