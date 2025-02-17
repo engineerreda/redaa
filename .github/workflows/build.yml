@@ -1,0 +1,106 @@
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04  # Use Ubuntu 22.04
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Docker
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get purge -y containerd*  # Remove conflicting containerd packages
+          sudo apt-get install -y docker.io  # Install Docker without conflicts
+          sudo systemctl start docker
+
+      # Step 3: Fix Held Packages
+      - name: Fix Held Packages
+        run: |
+          sudo apt-get update
+          sudo apt-mark unhold $(sudo apt-mark showhold) || true  # Unhold all held packages
+          sudo apt-get -f install -y  # Fix broken dependencies
+          sudo apt-get autoremove -y  # Remove unused packages
+          sudo apt-get autoclean -y  # Clean old packages
+
+      # Step 4: Pull official Ubuntu Docker Image
+      - name: Pull Ubuntu Docker Image
+        run: |
+          docker pull ubuntu:22.04  # Use Ubuntu 22.04 image
+
+      # Step 5: Install Dependencies inside Docker
+      - name: Install Dependencies
+        run: |
+          docker run --rm \
+            -v ${PWD}:/project \
+            -w /project \
+            ubuntu:22.04 bash -c " \
+            apt-get update && \
+            apt-get install -y software-properties-common curl wget && \  # Install essential dependencies
+            curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \  # Optional: Install Node.js if needed
+            add-apt-repository ppa:deadsnakes/ppa -y && \  # Add deadsnakes PPA
+            apt-get update && \
+            apt-get install -y python3.10 python3.10-venv python3.10-pip && \  # Ensure Python 3 and dependencies are installed
+            if [ ! -f /usr/bin/python3 ] || [ ! -L /usr/bin/python3 ]; then ln -s /usr/bin/python3.10 /usr/bin/python3; fi && \  # Ensure python3 points to python3.10 if link doesn't exist
+            if ! command -v python3 &> /dev/null; then echo 'Error: Python 3 is not installed!'; exit 1; fi && \
+            if ! command -v pip &> /dev/null; then \
+              echo 'pip not found. Installing pip...' && \
+              curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+              python3 get-pip.py && \
+              rm get-pip.py; \
+            fi && \
+            python3 --version && \
+            pip --version"  # Verify Python and pip installation
+
+      # Step 6: Build APK using Docker
+      - name: Build APK using Docker
+        run: |
+          docker run --rm \
+            -v ${PWD}:/project \
+            -w /project \
+            --user $(id -u):$(id -g) \
+            ubuntu:22.04 bash -c " \
+            apt-get update && \
+            apt-get install -y python3.10 python3.10-venv python3.10-pip && \
+            ln -s /usr/bin/python3.10 /usr/bin/python3 && \
+            if ! command -v python3 &> /dev/null; then \
+              echo 'Error: Python 3 is not installed!'; exit 1; \
+            fi && \
+            if ! command -v pip &> /dev/null; then \
+              echo 'pip not found. Installing pip...' && \
+              curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+              python3 get-pip.py && \
+              rm get-pip.py; \
+            fi && \
+            # Create virtual environment
+            python3 -m venv env || { echo 'Error: Failed to create virtual environment!'; exit 1; } && \
+            source env/bin/activate || { echo 'Error: Virtual environment activation failed!'; exit 1; } && \
+            # Install dependencies
+            python -m pip install --upgrade pip setuptools wheel && \
+            pip install buildozer cython kivy && \
+            # Check if buildozer.spec exists
+            if [ ! -f buildozer.spec ]; then \
+              echo 'Error: buildozer.spec not found!'; exit 1; \
+            fi && \
+            # Build APK
+            echo 'Building APK...' && \
+            buildozer --noinput android debug && \
+            # Check if APK is in bin directory
+            if [ -d bin ]; then \
+              ls -la bin/; \
+            else \
+              echo 'Error: bin directory not found!'; exit 1; \
+            fi"
+
+      # Step 7: Upload APK
+      - name: Upload APK
+        if: success()  # Run only if previous step succeeds
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: bin/*.apk
