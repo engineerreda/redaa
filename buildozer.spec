@@ -4,7 +4,7 @@ title = My Application
 
 # (str) Package name
 package.name = myapp
-
+version = 1.0.0
 # (str) Package domain (needed for android/ios packaging)
 package.domain = org.test
 
