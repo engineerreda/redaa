@@ -42,6 +42,7 @@ jobs:
             ubuntu:22.04 bash -c " \
             # Fix permissions issue with apt-get and update
             mkdir -p /var/lib/apt/lists/partial && \
+            chmod -R 777 /var/lib/apt/lists && \  # Fix permissions
             apt-get update && \
             apt-get install -y software-properties-common curl wget unzip && \  # Install essential dependencies (including wget and unzip)
             curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \  # Optional: Install Node.js if needed
@@ -69,6 +70,7 @@ jobs:
             ubuntu:22.04 bash -c " \
             # Fix permissions issue with apt-get and update
             mkdir -p /var/lib/apt/lists/partial && \
+            chmod -R 777 /var/lib/apt/lists && \
             apt-get update && \
             apt-get install -y python3.10 python3.10-venv python3.10-pip && \
             ln -s /usr/bin/python3.10 /usr/bin/python3 && \
