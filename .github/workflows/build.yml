@@ -42,17 +42,12 @@ jobs:
             ubuntu:22.04 bash -c " \
             # Run as root
             apt-get update && \
-            apt-get install -y sudo python3.10 python3.10-venv python3.10-pip curl wget unzip && \
+            apt-get install -y sudo python3.10 python3.10-venv curl wget unzip && \
             ln -s /usr/bin/python3.10 /usr/bin/python3 && \
-            if ! command -v python3 &> /dev/null; then \
-              echo 'Error: Python 3 is not installed!'; exit 1; \
-            fi && \
-            if ! command -v pip &> /dev/null; then \
-              echo 'pip not found. Installing pip...' && \
-              curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-              python3 get-pip.py && \
-              rm get-pip.py; \
-            fi && \
+            # Install pip using the recommended method
+            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+            python3 get-pip.py && \
+            rm get-pip.py && \
             # Create virtual environment
             python3 -m venv env || { echo 'Error: Failed to create virtual environment!'; exit 1; } && \
             source env/bin/activate || { echo 'Error: Virtual environment activation failed!'; exit 1; } && \
