@@ -62,9 +62,9 @@ jobs:
       - name: Build APK using Docker
         run: |
           docker run --rm \
-            -v $(pwd):/project \  # Correct reference for current working directory
+            -v $(pwd):/project \
             -w /project \
-            --user $(id -u):$(id -g) \  # Run as non-root user
+            --user $(id -u):$(id -g) \
             ubuntu:22.04 bash -c " \
             apt-get update && \
             apt-get install -y python3.10 python3.10-venv python3.10-pip && \
