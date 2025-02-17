@@ -41,7 +41,7 @@ jobs:
             -w /project \
             ubuntu:22.04 bash -c " \
             apt-get update && \
-            apt-get install -y software-properties-common curl wget && \  # Install essential dependencies
+            apt-get install -y software-properties-common curl wget unzip && \  # Install essential dependencies (including wget and unzip)
             curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \  # Optional: Install Node.js if needed
             add-apt-repository ppa:deadsnakes/ppa -y && \  # Add deadsnakes PPA
             apt-get update && \
@@ -57,30 +57,7 @@ jobs:
             python3 --version && \
             pip --version"  # Verify Python and pip installation
 
-      # Step 6: Install Android dependencies (SDK, NDK)
-      - name: Install Android SDK/NDK dependencies
-        run: |
-          docker run --rm \
-            -v ${PWD}:/project \
-            -w /project \
-            ubuntu:22.04 bash -c " \
-            apt-get update && \
-            apt-get install -y unzip openjdk-11-jdk && \
-            # Install Android SDK
-            mkdir -p /sdk && \
-            cd /sdk && \
-            wget https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip && \
-            unzip commandlinetools-linux-7583922_latest.zip && \
-            yes | ./cmdline-tools/bin/sdkmanager --sdk_root=/sdk --update && \
-            ./cmdline-tools/bin/sdkmanager --sdk_root=/sdk 'platform-tools' 'build-tools;30.0.3' 'platforms;android-30' && \
-            # Install NDK
-            ./cmdline-tools/bin/sdkmanager --sdk_root=/sdk 'ndk;21.3.6528147' && \
-            # Set environment variables
-            echo 'export ANDROID_SDK_ROOT=/sdk' >> ~/.bashrc && \
-            echo 'export PATH=$PATH:/sdk/platform-tools:/sdk/cmdline-tools/bin:/sdk/build-tools/30.0.3' >> ~/.bashrc && \
-            source ~/.bashrc"
-
-      # Step 7: Build APK using Docker
+      # Step 6: Build APK using Docker
       - name: Build APK using Docker
         run: |
           docker run --rm \
@@ -120,7 +97,7 @@ jobs:
               echo 'Error: bin directory not found!'; exit 1; \
             fi"
 
-      # Step 8: Upload APK
+      # Step 7: Upload APK
       - name: Upload APK
         if: success()  # Run only if previous step succeeds
         uses: actions/upload-artifact@v4
