@@ -39,17 +39,45 @@ jobs:
           docker run --rm \
             -v ${PWD}:/project \
             -w /project \
+            --user $(id -u):$(id -g) \  # Run as non-root user
             ubuntu:22.04 bash -c " \
-            # Run as root
             apt-get update && \
-            apt-get install -y sudo python3.10 python3.10-venv curl wget unzip && \
-            # Check if python3 symlink exists, remove it if necessary
-            if [ -f /usr/bin/python3 ]; then rm /usr/bin/python3; fi && \
+            apt-get install -y software-properties-common curl wget && \  # Install essential dependencies
+            curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \  # Optional: Install Node.js if needed
+            add-apt-repository ppa:deadsnakes/ppa -y && \  # Add deadsnakes PPA
+            apt-get update && \
+            apt-get install -y python3.10 python3.10-venv python3.10-pip && \  # Ensure Python 3 and dependencies are installed
+            if [ ! -f /usr/bin/python3 ] || [ ! -L /usr/bin/python3 ]; then ln -s /usr/bin/python3.10 /usr/bin/python3; fi && \  # Ensure python3 points to python3.10 if link doesn't exist
+            if ! command -v python3 &> /dev/null; then echo 'Error: Python 3 is not installed!'; exit 1; fi && \
+            if ! command -v pip &> /dev/null; then \
+              echo 'pip not found. Installing pip...' && \
+              curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+              python3 get-pip.py && \
+              rm get-pip.py; \
+            fi && \
+            python3 --version && \
+            pip --version"  # Verify Python and pip installation
+
+      # Step 6: Build APK using Docker
+      - name: Build APK using Docker
+        run: |
+          docker run --rm \
+            -v ${PWD}:/project \
+            -w /project \
+            --user $(id -u):$(id -g) \  # Run as non-root user
+            ubuntu:22.04 bash -c " \
+            apt-get update && \
+            apt-get install -y python3.10 python3.10-venv python3.10-pip && \
             ln -s /usr/bin/python3.10 /usr/bin/python3 && \
-            # Install pip using the recommended method
-            curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-            python3 get-pip.py && \
-            rm get-pip.py && \
+            if ! command -v python3 &> /dev/null; then \
+              echo 'Error: Python 3 is not installed!'; exit 1; \
+            fi && \
+            if ! command -v pip &> /dev/null; then \
+              echo 'pip not found. Installing pip...' && \
+              curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+              python3 get-pip.py && \
+              rm get-pip.py; \
+            fi && \
             # Create virtual environment
             python3 -m venv env || { echo 'Error: Failed to create virtual environment!'; exit 1; } && \
             source env/bin/activate || { echo 'Error: Virtual environment activation failed!'; exit 1; } && \
@@ -70,7 +98,7 @@ jobs:
               echo 'Error: bin directory not found!'; exit 1; \
             fi"
 
-      # Step 6: Upload APK
+      # Step 7: Upload APK
       - name: Upload APK
         if: success()  # Run only if previous step succeeds
         uses: actions/upload-artifact@v4
