@@ -40,13 +40,13 @@ jobs:
             -v ${PWD}:/project \
             -w /project \
             ubuntu:22.04 bash -c " \
-            apt-get update && \
-            apt-get install -y software-properties-common curl wget unzip && \  # Install essential dependencies (including wget and unzip)
+            sudo apt-get update && \
+            sudo apt-get install -y software-properties-common curl wget unzip && \  # Install essential dependencies (including wget and unzip)
             curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \  # Optional: Install Node.js if needed
-            add-apt-repository ppa:deadsnakes/ppa -y && \  # Add deadsnakes PPA
-            apt-get update && \
-            apt-get install -y python3.10 python3.10-venv python3.10-pip && \  # Ensure Python 3 and dependencies are installed
-            if [ ! -f /usr/bin/python3 ] || [ ! -L /usr/bin/python3 ]; then ln -s /usr/bin/python3.10 /usr/bin/python3; fi && \  # Ensure python3 points to python3.10 if link doesn't exist
+            sudo add-apt-repository ppa:deadsnakes/ppa -y && \  # Add deadsnakes PPA
+            sudo apt-get update && \
+            sudo apt-get install -y python3.10 python3.10-venv python3.10-pip && \  # Ensure Python 3 and dependencies are installed
+            if [ ! -f /usr/bin/python3 ] || [ ! -L /usr/bin/python3 ]; then sudo ln -s /usr/bin/python3.10 /usr/bin/python3; fi && \  # Ensure python3 points to python3.10 if link doesn't exist
             if ! command -v python3 &> /dev/null; then echo 'Error: Python 3 is not installed!'; exit 1; fi && \
             if ! command -v pip &> /dev/null; then \
               echo 'pip not found. Installing pip...' && \
@@ -65,9 +65,9 @@ jobs:
             -w /project \
             --user $(id -u):$(id -g) \
             ubuntu:22.04 bash -c " \
-            apt-get update && \
-            apt-get install -y python3.10 python3.10-venv python3.10-pip && \
-            ln -s /usr/bin/python3.10 /usr/bin/python3 && \
+            sudo apt-get update && \
+            sudo apt-get install -y python3.10 python3.10-venv python3.10-pip && \
+            sudo ln -s /usr/bin/python3.10 /usr/bin/python3 && \
             if ! command -v python3 &> /dev/null; then \
               echo 'Error: Python 3 is not installed!'; exit 1; \
             fi && \
