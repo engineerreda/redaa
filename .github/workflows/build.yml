@@ -40,39 +40,9 @@ jobs:
             -v ${PWD}:/project \
             -w /project \
             ubuntu:22.04 bash -c " \
-            # Fix permissions issue with apt-get and update
-            mkdir -p /var/lib/apt/lists/partial && \
-            chmod -R 777 /var/lib/apt/lists && \  # Fix permissions
+            # Run as root
             apt-get update && \
-            apt-get install -y software-properties-common curl wget unzip && \  # Install essential dependencies (including wget and unzip)
-            curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \  # Optional: Install Node.js if needed
-            add-apt-repository ppa:deadsnakes/ppa -y && \  # Add deadsnakes PPA
-            apt-get update && \
-            apt-get install -y python3.10 python3.10-venv python3.10-pip && \  # Ensure Python 3 and dependencies are installed
-            if [ ! -f /usr/bin/python3 ] || [ ! -L /usr/bin/python3 ]; then ln -s /usr/bin/python3.10 /usr/bin/python3; fi && \  # Ensure python3 points to python3.10 if link doesn't exist
-            if ! command -v python3 &> /dev/null; then echo 'Error: Python 3 is not installed!'; exit 1; fi && \
-            if ! command -v pip &> /dev/null; then \
-              echo 'pip not found. Installing pip...' && \
-              curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-              python3 get-pip.py && \
-              rm get-pip.py; \
-            fi && \
-            python3 --version && \
-            pip --version"  # Verify Python and pip installation
-
-      # Step 6: Build APK using Docker
-      - name: Build APK using Docker
-        run: |
-          docker run --rm \
-            -v ${PWD}:/project \
-            -w /project \
-            --user $(id -u):$(id -g) \
-            ubuntu:22.04 bash -c " \
-            # Fix permissions issue with apt-get and update
-            mkdir -p /var/lib/apt/lists/partial && \
-            chmod -R 777 /var/lib/apt/lists && \
-            apt-get update && \
-            apt-get install -y python3.10 python3.10-venv python3.10-pip && \
+            apt-get install -y sudo python3.10 python3.10-venv python3.10-pip curl wget unzip && \
             ln -s /usr/bin/python3.10 /usr/bin/python3 && \
             if ! command -v python3 &> /dev/null; then \
               echo 'Error: Python 3 is not installed!'; exit 1; \
@@ -103,7 +73,7 @@ jobs:
               echo 'Error: bin directory not found!'; exit 1; \
             fi"
 
-      # Step 7: Upload APK
+      # Step 6: Upload APK
       - name: Upload APK
         if: success()  # Run only if previous step succeeds
         uses: actions/upload-artifact@v4
